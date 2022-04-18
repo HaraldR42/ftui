@@ -12,6 +12,7 @@ const format = value => input => ftuiHelper.dateFormat(input, value);
 const humanized = () => input => ftuiHelper.durationHumanized(input);
 const round = value => input => ftuiHelper.round(input, value);
 const fix = value => input => Number(input).toFixed(value);
+const slice = (start, end)  => input => String(input).slice(start, end);
 const encode = () => input => encodeURI(input);
 const add = value => input => Number(input) + value;
 const multiply = value => input => Number(input) * value;
@@ -31,10 +32,17 @@ const isNot = value => input => String(input) !== value ? true : false;
 const pad = (cnt, char) => input => String(input).padStart(cnt, char);
 const append = value => input => String(input) + value;
 const prepend = value => input => value + String(input);
+const sendCommand = value => input => send(value);
+const getHTML = value => input => send('get ' + value + ' html');
 
 const pipe = (f1, ...fns) => (...args) => {
   return fns.reduce((res, fn) => fn(res), f1.apply(null, args));
 };
+
+async function send(command) {
+  const result = await fhemService.sendCommand(command);
+  return await result.text();
+}
 
 export class FtuiBinding {
 
@@ -47,7 +55,6 @@ export class FtuiBinding {
     }
 
     this.element = element;
-    this.element.isActiveChange = {};
     this.isThirdPartyElement = false;
     this.config = {
       input: { readings: {} },
@@ -92,12 +99,12 @@ export class FtuiBinding {
     }
     const readingAttributeMap = this.config.input.readings[readingData.id].attributes;
     Object.entries(readingAttributeMap)
-      .forEach(([attribute, options]) => {
+      .forEach(async ([attribute, options]) => {
         // update marker to avoid infinity loops
         this.element.isActiveChange[attribute] = false;
         const value = readingData[options.property];
         if (ftuiHelper.isDefined(value)) {
-          let filteredValue = this.filterValue(value, options.filter);
+          let filteredValue = await this.filterValue(value, options.filter);
           if (ftuiHelper.isDefined(filteredValue)) {
             if (typeof filteredValue === 'string') {
               filteredValue = filteredValue.replace(/\$value/g, value);

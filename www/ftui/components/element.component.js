@@ -32,6 +32,7 @@ export class FtuiElement extends HTMLElement {
       this.createShadowRoot(this.template());
     }
 
+    this.isActiveChange = {};
     // solution adapted from the very useful thread https://stackoverflow.com/questions/7307983/while-variable-is-not-defined-wait
     (async () => {
       while (typeof window.ftuiApp === 'undefined') await new Promise(resolve => setTimeout(resolve, 2000));
